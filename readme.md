@@ -21,6 +21,16 @@ Las pruebas realizadas en este proyecto fueron hechas bajo un sistema con las si
 El head de API es https://api.coingecko.com/api/v3/, donde se puede notar que la API de coingecko esta en su versión número 3.
 
 
+### ping
+
+Consulta simple para corroborar conexión.
+
+```
+Consulta GET: https://api.coingecko.com/api/v3/ping
+Resultado   : {"gecko_says":"(V3) To the Moon!"}
+```
+
+
 ### coins/list
 
 Esta consulta retorna una JSON con todos las las monedas incluídas en coingecko. Al ser bastante pesada por la magnitud de los datos suele tardarse, por lo que se considera grabar la información en una base local y utilizarla cada día para actualizar la información de ser necesario.
