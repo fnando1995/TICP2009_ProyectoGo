@@ -16,6 +16,19 @@ Las pruebas realizadas en este proyecto fueron hechas bajo un sistema con las si
 - S.O. -> Linux Ubuntu 20.04
 - Go -> 1.16.6
 
+
+## Instalación
+
+```
+go mod init master.project/go
+go get -u gorm.io/gorm
+go get -u gorm.io/driver/sqlite
+go run createdatabase.go
+```
+
+## 
+
+
 ## Descripcion de APIs usados
 
 El head de API es https://api.coingecko.com/api/v3/, donde se puede notar que la API de coingecko esta en su versión número 3.
