@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"gorm.io/driver/sqlite"
@@ -58,14 +59,33 @@ func refresh(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Se actualizo la base de datos ...")
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Pagina de bienvenida ....")
-	fmt.Println("Endpoint Hit: homePage")
+func exchangeMid(w http.ResponseWriter, r *http.Request) {
+	getData := func(coin1, convertion string) float64 {
+		url := "https://api.coingecko.com/api/v3/simple/price?ids=" + coin1 + "&vs_currencies=" + convertion
+		resp, err := http.Get(url)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+		var data1 map[string]map[string]float64
+		err = json.NewDecoder(resp.Body).Decode(&data1)
+		if err != nil {
+			panic(err)
+		}
+		return data1[coin1][convertion]
+	}
+	fmt.Println("Endpoint Hit: exchangeMid")
+	coin1 := strings.Split(r.URL.Query()["coin1"][0], ",")[0]
+	coin2 := strings.Split(r.URL.Query()["coin2"][0], ",")[0]
+	convertion := strings.Split(r.URL.Query()["mid"][0], ",")[0]
+	numerador := getData(coin1, convertion)
+	denominador := getData(coin2, convertion)
+	fmt.Fprint(w, "1 ", coin1, " es equivalente a  ", numerador/denominador, " ", coin2)
 }
 
 func handleRequests() {
+	http.HandleFunc("/exchange", exchangeMid)
 	http.HandleFunc("/refresh", refresh)
-	http.HandleFunc("/", homePage)
 	log.Fatal(http.ListenAndServe(":10000", nil))
 }
 
