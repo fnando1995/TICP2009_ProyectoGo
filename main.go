@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"html/template"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -21,7 +23,7 @@ type Coin struct {
 	CoinName   string `json:"name"`
 }
 
-func refresh(w http.ResponseWriter, r *http.Request) {
+func updatedatabase(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Consultando API Gecko para actualizar monedas")
 	response, err := http.Get("https://api.coingecko.com/api/v3/coins/list")
 	if err != nil {
@@ -59,7 +61,7 @@ func refresh(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Se actualizo la base de datos ...")
 }
 
-func exchangeMid(w http.ResponseWriter, r *http.Request) {
+func exchange(w http.ResponseWriter, r *http.Request) {
 	getData := func(coin1, convertion string) float64 {
 		url := "https://api.coingecko.com/api/v3/simple/price?ids=" + coin1 + "&vs_currencies=" + convertion
 		resp, err := http.Get(url)
@@ -80,13 +82,33 @@ func exchangeMid(w http.ResponseWriter, r *http.Request) {
 	convertion := strings.Split(r.URL.Query()["mid"][0], ",")[0]
 	numerador := getData(coin1, convertion)
 	denominador := getData(coin2, convertion)
-	fmt.Fprint(w, "1 ", coin1, " es equivalente a  ", numerador/denominador, " ", coin2)
+	// fmt.Fprint(w, )
+	fmt.Fprint(w, "<h1>", "1 ", coin1, " es equivalente a  ", numerador/denominador, " ", coin2, "</h1>")
+
+}
+
+func home(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ENTER HOME")
+	t1, _ := template.ParseFiles("templates/home.html")
+	t1.Execute(w, nil)
+}
+
+func update(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ENTER UPDATE")
+	t2, _ := template.ParseFiles("templates/update.html")
+	t2.Execute(w, nil)
+	fmt.Println("FINISH UPDATE")
 }
 
 func handleRequests() {
-	http.HandleFunc("/exchange", exchangeMid)
-	http.HandleFunc("/refresh", refresh)
-	log.Fatal(http.ListenAndServe(":10000", nil))
+	http.HandleFunc("/home", home)
+	http.HandleFunc("/update", update)
+	http.HandleFunc("/updatedatabase", updatedatabase)
+	http.HandleFunc("/exchange", exchange)
+
+	port := ":9000"
+	log.Println("Listening on port ", port)
+	http.ListenAndServe(port, nil)
 }
 
 func main() {
