@@ -79,7 +79,7 @@ http://localhost:9000/exchange?coin1=bitcoin&coin2=ethereum&mid=usd
 
 Aquí se puede apreciar la forma de hacer el cambio de un bitcoin a ethereum considerando el precio de USD.
 
-Estos cambios intermedios suelen darse en las casas de cambios por la volatilidad de las monedas frente a una moneda más estable. En ciertos casos puede ser mejor hacer cambio directo, que pasar por una moneda. Otro extra es que el doble cambio esta sujeto a la demanda y oferta de dos monedas, mientras que la directa solo de una, así mismo los costos de intereses por intercambio solo se consideraran una sola vez, y no dos.
+Estos cambios intermedios suelen darse en las casas de cambios por la volatilidad de las monedas frente a una moneda más estable. En ciertos casos puede ser mejor hacer cambio directo, que pasar por una moneda. Otro extra es que el doble cambio esta sujeto a la demanda y oferta de dos monedas, mientras que la directa solo de una, así mismo los costos de intereses por intercambio solo se consideraran una sola vez, y no dos. Por último, algunas casas de monedas no permiten cambios excepto si son entre las monedas habilitadas para intercambio directo, por esto la 2da consulta retorna las monedas soportadas para cambios.
 
 
 ## Como usar
