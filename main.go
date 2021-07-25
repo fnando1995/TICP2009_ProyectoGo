@@ -23,6 +23,11 @@ type Coin struct {
 	CoinName   string `json:"name"`
 }
 
+type SupportedCurrency struct {
+	gorm.Model
+	SCId string
+}
+
 func updatedatabase(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Consultando API Gecko para actualizar monedas")
 	response, err := http.Get("https://api.coingecko.com/api/v3/coins/list")
@@ -37,7 +42,19 @@ func updatedatabase(w http.ResponseWriter, r *http.Request) {
 	var data []Coin
 	json.Unmarshal([]byte(responseData), &data)
 
-	fmt.Println("Limpiando base de datos...")
+	response2, err := http.Get("https://api.coingecko.com/api/v3/simple/supported_vs_currencies")
+	if err != nil {
+		fmt.Print(err.Error())
+		os.Exit(1)
+	}
+	responseData2, err := ioutil.ReadAll(response2.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var data2 []string
+	json.Unmarshal([]byte(responseData2), &data2)
+
+	fmt.Println("Limpiando base de datos coins...")
 	_, file := os.Stat("database/coins.db")
 	if !os.IsNotExist(file) {
 		e := os.Remove("database/coins.db")
@@ -45,6 +62,18 @@ func updatedatabase(w http.ResponseWriter, r *http.Request) {
 			log.Fatal(e)
 		}
 	}
+
+	fmt.Println("Limpiando base de datos supported currencies...")
+	_, file2 := os.Stat("database/supportedCurrencies.db")
+	if !os.IsNotExist(file2) {
+		e := os.Remove("database/supportedCurrencies.db")
+		if e != nil {
+			log.Fatal(e)
+		}
+	}
+
+	fmt.Println("Creando bases y modelos...")
+
 	db, err := gorm.Open(sqlite.Open("database/coins.db"), &gorm.Config{})
 	if err != nil {
 		panic("Conexion a base de datos fallida...")
@@ -52,16 +81,30 @@ func updatedatabase(w http.ResponseWriter, r *http.Request) {
 	time.Sleep(1 * time.Second)
 	db.AutoMigrate(&Coin{})
 
-	fmt.Println("Agregando informacion...")
+	db2, err := gorm.Open(sqlite.Open("database/supportedCurrencies.db"), &gorm.Config{})
+	if err != nil {
+		panic("Conexion a base de datos fallida...")
+	}
+	time.Sleep(1 * time.Second)
+	db2.AutoMigrate(&SupportedCurrency{})
+
+	fmt.Println("Agregando informacion en coins...")
 	for i := 0; i < len(data); i++ {
 		time.Sleep(1 * time.Millisecond)
 		db.Create(&Coin{CoinId: data[i].CoinId, CoinSymbol: data[i].CoinSymbol, CoinName: data[i].CoinName})
 	}
+
+	fmt.Println("Agregando informacion en supported currencies...")
+	for i := 0; i < len(data2); i++ {
+		time.Sleep(1 * time.Millisecond)
+		db2.Create(&SupportedCurrency{SCId: data2[i]})
+	}
 	fmt.Println("Informacion actualizada...")
-	fmt.Fprintf(w, "Se actualizo la base de datos ...")
+	t2, _ := template.ParseFiles("templates/updated.html")
+	t2.Execute(w, nil)
 }
 
-func exchange(w http.ResponseWriter, r *http.Request) {
+func exchangefunc(w http.ResponseWriter, r *http.Request) {
 	getData := func(coin1, convertion string) float64 {
 		url := "https://api.coingecko.com/api/v3/simple/price?ids=" + coin1 + "&vs_currencies=" + convertion
 		resp, err := http.Get(url)
@@ -82,9 +125,10 @@ func exchange(w http.ResponseWriter, r *http.Request) {
 	convertion := strings.Split(r.URL.Query()["mid"][0], ",")[0]
 	numerador := getData(coin1, convertion)
 	denominador := getData(coin2, convertion)
-	// fmt.Fprint(w, )
-	fmt.Fprint(w, "<h1>", "1 ", coin1, " es equivalente a  ", numerador/denominador, " ", coin2, "</h1>")
-
+	resultado := fmt.Sprintf("%f", numerador/denominador)
+	var result string = "1 " + coin1 + " en 1 " + coin2 + " pasando por " + convertion + " equivale a: " + resultado
+	t2, _ := template.ParseFiles("templates/exchanged.html")
+	t2.Execute(w, &result)
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
@@ -100,11 +144,44 @@ func update(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("FINISH UPDATE")
 }
 
+func exchange(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ENTER EXCHANGE")
+
+	t3, _ := template.ParseFiles("templates/exchange.html")
+
+	dbCoins, err := gorm.Open(sqlite.Open("database/coins.db"), &gorm.Config{})
+	if err != nil {
+		panic("Conexion a base de datos fallida...")
+	}
+	resultQueryCoin := []Coin{}
+	dbCoins.Find(&resultQueryCoin)
+
+	dbSupportedCurrencies, err := gorm.Open(sqlite.Open("database/supportedCurrencies.db"), &gorm.Config{})
+	if err != nil {
+		panic("Conexion a base de datos fallida...")
+	}
+	resultQuerySC := []SupportedCurrency{}
+	dbSupportedCurrencies.Find(&resultQuerySC)
+
+	data := struct {
+		Monedas []Coin
+		Otros   []SupportedCurrency
+	}{
+		resultQueryCoin,
+		resultQuerySC,
+	}
+
+	t3.Execute(w, &data)
+	fmt.Println("FINISH EXCHANGE")
+}
+
 func handleRequests() {
 	http.HandleFunc("/home", home)
 	http.HandleFunc("/update", update)
-	http.HandleFunc("/updatedatabase", updatedatabase)
 	http.HandleFunc("/exchange", exchange)
+
+	http.HandleFunc("/updatedatabase", updatedatabase)
+	http.HandleFunc("/exchangefunc", exchangefunc)
 
 	port := ":9000"
 	log.Println("Listening on port ", port)
