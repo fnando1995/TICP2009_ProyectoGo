@@ -36,7 +36,7 @@ El head de API es https://api.coingecko.com/api/v3/, donde se puede notar que la
 
 ### coins/list
 
-Esta consulta retorna una JSON con todos las las monedas incluídas en coingecko. Al ser bastante pesada por la magnitud de los datos suele tardarse, por lo que se considera grabar la información en una base local y utilizarla cada día para actualizar la información de ser necesario.
+Esta consulta retorna un listado de diccionarios con todos las monedas incluídas en coingecko. Al ser bastante pesada por la magnitud de los datos suele tardarse, por lo que se considera grabar la información en una base local y utilizarla cada día para actualizar la información de ser necesario.
 
 Esta API no entrega información relevante más allá de nombre, símbolo y id de la moneda.
 
@@ -47,6 +47,18 @@ localhost:9000/updatedatabase
 ```
 
 Se tardará un rato hasta descargar la informacion y luego agregarla crear la nueva base de datos con la informacion actualizada.
+
+
+### supported_vs_currencies
+
+Esta consulta trae un listado de todas las moendas validas para intercambios. 
+
+Se la utiliza para en conjunto a coins/list para actualizar base de datos de valores que se utilizan en la aplicación.
+
+```
+localhost:9000/updatedatabase
+```
+
 
 ### simple/price?ids=XXXX&vs_currencies=XXX
 
